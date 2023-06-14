@@ -1,0 +1,39 @@
+$tcpClient = New-Object System.Net.Sockets.TcpClient("10.20.30.1", 6060)
+
+$stream = $tcpClient.GetStream()
+
+# Connection setup request
+$handshakeRequest = [byte[]](0x6c,0x00,0x0b,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00)
+$stream.Write($handshakeRequest, 0, $handshakeRequest.Length)
+
+# Read the connection setup reply
+$setupReply = New-Object byte[] 8
+$stream.Read($setupReply, 0, $setupReply.Length)
+
+if ($setupReply[0] -eq 0) {
+    Write-Host "Connection setup failed"
+    $tcpClient.Close()
+    return
+}
+
+# ListHosts request
+$listHostsRequest = [byte[]](0x73,0x00,0x01,0x00)
+$stream.Write($listHostsRequest, 0, $listHostsRequest.Length)
+
+# Read and output the reply
+$reply = New-Object byte[] 32
+$stream.Read($reply, 0, $reply.Length)
+Write-Host ([System.Text.Encoding]::ASCII.GetString($reply))
+
+# ChangeHosts request
+$changeHostsRequest = [byte[]](0x14,0x00,0x04,0x00,0x04,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x0a,0x14,0x1e,0x28)
+$stream.Write($changeHostsRequest, 0, $changeHostsRequest.Length)
+
+# ListHosts request again
+$stream.Write($listHostsRequest, 0, $listHostsRequest.Length)
+
+# Read and output the reply
+$stream.Read($reply, 0, $reply.Length)
+Write-Host ([System.Text.Encoding]::ASCII.GetString($reply))
+
+$tcpClient.Close()
